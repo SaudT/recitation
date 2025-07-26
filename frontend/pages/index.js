@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 function QuranAudioApp() {
   const [file, setFile] = useState(null);
   const [title, setTitle] = useState('');
-  const [label, setLabel] = useState('');
   const [description, setDescription] = useState('');
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([]);
@@ -11,7 +10,7 @@ function QuranAudioApp() {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!file || !title) return alert('File and title are required!');
-    const res = await uploadAudio({ file, title, label, description });
+    const res = await uploadAudio({ file, title, description });
     alert(res.message || 'Upload complete!');
   };
 
@@ -27,7 +26,6 @@ function QuranAudioApp() {
       <form onSubmit={handleUpload}>
         <input type="file" accept="audio/*" onChange={e => setFile(e.target.files[0])} required />
         <input type="text" placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} required />
-        <input type="text" placeholder="Label" value={label} onChange={e => setLabel(e.target.value)} />
         <textarea placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} />
         <button type="submit">Upload</button>
       </form>
@@ -42,7 +40,7 @@ function QuranAudioApp() {
       <ul>
         {results.map(audio => (
           <li key={audio.id}>
-            <strong>{audio.title}</strong> ({audio.label})<br />
+            <strong>{audio.title}</strong><br />
             {audio.description}<br />
             <AudioPlayer audioId={audio.id} originalName={audio.original_name} />
           </li>
@@ -53,11 +51,10 @@ function QuranAudioApp() {
 }
 
 // Helper functions from above
-async function uploadAudio({ file, title, label, description }) {
+async function uploadAudio({ file, title, description }) {
   const formData = new FormData();
   formData.append('audio', file);
   formData.append('title', title);
-  formData.append('label', label);
   formData.append('description', description);
 
   const response = await fetch('http://localhost:5001/api/audio/upload', {

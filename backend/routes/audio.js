@@ -23,9 +23,16 @@ const upload = multer({
       'audio/webm'
     ];
     
-    if (allowedMimes.includes(file.mimetype)) {
+    // Also check file extension as fallback
+    const allowedExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.webm'];
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    
+    // Accept if MIME type is correct OR if file extension is correct
+    if (allowedMimes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
+      console.log(`File accepted: ${file.originalname} (MIME: ${file.mimetype}, Ext: ${fileExtension})`);
       cb(null, true);
     } else {
+      console.log(`File rejected: ${file.originalname} (MIME: ${file.mimetype}, Ext: ${fileExtension})`);
       cb(new Error('Only audio files are allowed!'), false);
     }
   }
@@ -39,26 +46,26 @@ router.post('/upload', upload.single('audio'), async (req, res) => {
     }
 
     const { originalname, mimetype, size, buffer } = req.file;
-    const { title, label, description } = req.body;
-    if (!title) {
-      return res.status(400).json({ error: 'Title is required' });
+    const { surah, description } = req.body;
+    if (!surah) {
+      return res.status(400).json({ error: 'Surah is required' });
     }
     const filename = `${Date.now()}-${originalname}`;
-
     // Insert audio file into database
     const query = `
-      INSERT INTO audio_files (title, label, description, filename, original_name, file_size, mime_type, audio_data)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, title, label, description, filename, original_name, file_size, created_at
+      INSERT INTO audio_files (surah, description, filename, original_name, file_size, mime_type, audio_data)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id, surah, description, filename, original_name, file_size, created_at
     `;
 
-    const values = [title, label, description, filename, originalname, size, mimetype, buffer];
+    const values = [surah, description, filename, originalname, size, mimetype, buffer];
     const result = await pool.query(query, values);
 
     res.status(201).json({
       message: 'Audio file uploaded successfully',
       file: result.rows[0]
     });
+    console.log(result.rows);
 
   } catch (error) {
     console.error('Upload error:', error);
@@ -66,13 +73,38 @@ router.post('/upload', upload.single('audio'), async (req, res) => {
   }
 });
 
+// GET /api/audio/search?surah=... - Search audio files by surah
+router.get('/search', async (req, res) => {
+  try {
+    const { surah } = req.query;
+    if (!surah) {
+      return res.status(400).json({ error: 'Surah query parameter is required' });
+    }
+    const query = `
+      SELECT id, surah, description, filename, original_name, file_size, mime_type, created_at
+      FROM audio_files
+      WHERE LOWER(surah) LIKE LOWER($1)
+      ORDER BY created_at DESC
+    `;
+    const values = [`%${surah}%`];
+    const result = await pool.query(query, values);
+    res.json({ files: result.rows });
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Failed to search audio files' });
+  }
+});
+
 // GET /api/audio/:id - Get audio file by ID
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+    console.log('Fetching audio with ID:', id);
+
     const query = 'SELECT * FROM audio_files WHERE id = $1';
     const result = await pool.query(query, [id]);
+
+    console.log('Query result:', result.rows);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Audio file not found' });
@@ -89,18 +121,20 @@ router.get('/:id', async (req, res) => {
 
     // Send the audio data
     res.send(audioFile.audio_data);
+    console.log("audioFile fetched", audioFile)
 
   } catch (error) {
     console.error('Retrieve error:', error);
     res.status(500).json({ error: 'Failed to retrieve audio file' });
   }
+  
 });
 
 // GET /api/audio - Get list of all audio files
 router.get('/', async (req, res) => {
   try {
     const query = `
-      SELECT id, title, label, description, filename, original_name, file_size, mime_type, created_at 
+      SELECT id, surah, description, filename, original_name, file_size, mime_type, created_at 
       FROM audio_files 
       ORDER BY created_at DESC
     `;
@@ -114,28 +148,6 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('List error:', error);
     res.status(500).json({ error: 'Failed to retrieve audio files list' });
-  }
-});
-
-// GET /api/audio/search?title=... - Search audio files by title
-router.get('/search', async (req, res) => {
-  try {
-    const { title } = req.query;
-    if (!title) {
-      return res.status(400).json({ error: 'Title query parameter is required' });
-    }
-    const query = `
-      SELECT id, title, label, description, filename, original_name, file_size, mime_type, created_at
-      FROM audio_files
-      WHERE LOWER(title) LIKE LOWER($1)
-      ORDER BY created_at DESC
-    `;
-    const values = [`%${title}%`];
-    const result = await pool.query(query, values);
-    res.json({ files: result.rows });
-  } catch (error) {
-    console.error('Search error:', error);
-    res.status(500).json({ error: 'Failed to search audio files' });
   }
 });
 
