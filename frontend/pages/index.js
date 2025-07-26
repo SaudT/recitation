@@ -2,21 +2,21 @@ import React, { useState } from 'react';
 
 function QuranAudioApp() {
   const [file, setFile] = useState(null);
-  const [title, setTitle] = useState('');
+  const [surah, setSurah] = useState('');
   const [description, setDescription] = useState('');
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([]);
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!file || !title) return alert('File and title are required!');
-    const res = await uploadAudio({ file, title, description });
+    if (!file || !surah) return alert('File and surah are required!');
+    const res = await uploadAudio({ file, surah, description });
     alert(res.message || 'Upload complete!');
   };
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    const files = await searchAudioByTitle(search);
+    const files = await searchAudioBySurah(search);
     setResults(files);
   };
 
@@ -25,14 +25,14 @@ function QuranAudioApp() {
       <h2>Upload Quran Audio</h2>
       <form onSubmit={handleUpload}>
         <input type="file" accept="audio/*" onChange={e => setFile(e.target.files[0])} required />
-        <input type="text" placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} required />
+        <input type="text" placeholder="Surah" value={surah} onChange={e => setSurah(e.target.value)} required />
         <textarea placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} />
         <button type="submit">Upload</button>
       </form>
 
-      <h2>Search Audio by Title</h2>
+      <h2>Search Audio by Surah</h2>
       <form onSubmit={handleSearch}>
-        <input type="text" placeholder="Search title..." value={search} onChange={e => setSearch(e.target.value)} />
+        <input type="text" placeholder="Search surah..." value={search} onChange={e => setSearch(e.target.value)} />
         <button type="submit">Search</button>
       </form>
 
@@ -40,7 +40,7 @@ function QuranAudioApp() {
       <ul>
         {results.map(audio => (
           <li key={audio.id}>
-            <strong>{audio.title}</strong><br />
+            <strong>{audio.surah}</strong><br />
             {audio.description}<br />
             <AudioPlayer audioId={audio.id} originalName={audio.original_name} />
           </li>
@@ -51,10 +51,10 @@ function QuranAudioApp() {
 }
 
 // Helper functions from above
-async function uploadAudio({ file, title, description }) {
+async function uploadAudio({ file, surah, description }) {
   const formData = new FormData();
   formData.append('audio', file);
-  formData.append('title', title);
+  formData.append('surah', surah);
   formData.append('description', description);
 
   const response = await fetch('http://localhost:5001/api/audio/upload', {
@@ -64,9 +64,9 @@ async function uploadAudio({ file, title, description }) {
   return response.json();
 }
 
-async function searchAudioByTitle(title) {
+async function searchAudioBySurah(surah) {
   const response = await fetch(
-    `http://localhost:5001/api/audio/search?title=${encodeURIComponent(title)}`
+    `http://localhost:5001/api/audio/search?surah=${encodeURIComponent(surah)}`
   );
   const data = await response.json();
   return data.files;
