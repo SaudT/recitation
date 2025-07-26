@@ -1,85 +1,44 @@
-import React, { useState } from 'react';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import CTASection from '../components/CTASection';
 
-function QuranAudioApp() {
-  const [file, setFile] = useState(null);
-  const [surah, setSurah] = useState('');
-  const [description, setDescription] = useState('');
-  const [search, setSearch] = useState('');
-  const [results, setResults] = useState([]);
-
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!file || !surah) return alert('File and surah are required!');
-    const res = await uploadAudio({ file, surah, description });
-    alert(res.message || 'Upload complete!');
-  };
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    const files = await searchAudioBySurah(search);
-    setResults(files);
-  };
-
+export default function Home() {
   return (
-    <div>
-      <h2>Upload Quran Audio</h2>
-      <form onSubmit={handleUpload}>
-        <input type="file" accept="audio/*" onChange={e => setFile(e.target.files[0])} required />
-        <input type="text" placeholder="Surah" value={surah} onChange={e => setSurah(e.target.value)} required />
-        <textarea placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} />
-        <button type="submit">Upload</button>
-      </form>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Navbar />
+      <main className="flex-1">
+        {/* Hero Header Section */}
+        <section className="bg-white py-16 px-4 text-center shadow-sm">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Welcome to Quran Audio Hub</h1>
+          <p className="text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
+            Listen to, search, and upload Quran recitations. Enjoy a growing library of recitations from various reciters, with easy search and upload features.
+          </p>
+          <a href="/upload" className="inline-block bg-blue-600 text-white px-6 py-3 rounded-md font-semibold shadow hover:bg-blue-700 transition">Upload Your Recitation</a>
+        </section>
 
-      <h2>Search Audio by Surah</h2>
-      <form onSubmit={handleSearch}>
-        <input type="text" placeholder="Search surah..." value={search} onChange={e => setSearch(e.target.value)} />
-        <button type="submit">Search</button>
-      </form>
+        {/* Benefits Section */}
+        <section className="py-12 px-4 max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Why Use Quran Audio Hub?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="font-semibold text-lg mb-2">Community Library</h3>
+              <p className="text-gray-600">Access a wide range of recitations uploaded by users from around the world.</p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="font-semibold text-lg mb-2">Easy Upload & Search</h3>
+              <p className="text-gray-600">Upload your own recitations or search for your favorite surahs and reciters in seconds.</p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="font-semibold text-lg mb-2">Free & Open</h3>
+              <p className="text-gray-600">No sign-up required to listen. Share and benefit from the recitations freely.</p>
+            </div>
+          </div>
+        </section>
 
-      <h2>Results</h2>
-      <ul>
-        {results.map(audio => (
-          <li key={audio.id}>
-            <strong>{audio.surah}</strong><br />
-            {audio.description}<br />
-            <AudioPlayer audioId={audio.id} originalName={audio.original_name} />
-          </li>
-        ))}
-      </ul>
+        {/* CTA Section */}
+        <CTASection />
+      </main>
+      <Footer />
     </div>
   );
 }
-
-// Helper functions from above
-async function uploadAudio({ file, surah, description }) {
-  const formData = new FormData();
-  formData.append('audio', file);
-  formData.append('surah', surah);
-  formData.append('description', description);
-
-  const response = await fetch('http://localhost:5001/api/audio/upload', {
-    method: 'POST',
-    body: formData,
-  });
-  return response.json();
-}
-
-async function searchAudioBySurah(surah) {
-  const response = await fetch(
-    `http://localhost:5001/api/audio/search?surah=${encodeURIComponent(surah)}`
-  );
-  const data = await response.json();
-  return data.files;
-}
-
-function AudioPlayer({ audioId, originalName }) {
-  const audioUrl = `http://localhost:5001/api/audio/${audioId}`;
-  return (
-    <audio controls>
-      <source src={audioUrl} />
-      Your browser does not support the audio element.
-    </audio>
-  );
-}
-
-export default QuranAudioApp;
