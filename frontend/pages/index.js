@@ -128,7 +128,7 @@ function QuranAudioApp() {
       <div className="bg-white shadow-lg border-b-4 border-emerald-500">
         <div className="container mx-auto px-6 py-8">
           <h1 className="text-4xl font-bold text-gray-800 text-center">
-            <span className="text-emerald-600">Quran</span> Recitation Hub
+            <span className="text-emerald-600">Recitations</span>
           </h1>
           <p className="text-gray-600 text-center mt-2">Upload, search, and listen to beautiful Quran recitations</p>
         </div>
