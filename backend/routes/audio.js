@@ -22,11 +22,11 @@ const upload = multer({
       'audio/aac',
       'audio/webm'
     ];
-    
+
     // Also check file extension as fallback
     const allowedExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.webm'];
     const fileExtension = path.extname(file.originalname).toLowerCase();
-    
+
     // Accept if MIME type is correct OR if file extension is correct
     if (allowedMimes.includes(file.mimetype) || allowedExtensions.includes(fileExtension)) {
       console.log(`File accepted: ${file.originalname} (MIME: ${file.mimetype}, Ext: ${fileExtension})`);
@@ -73,25 +73,39 @@ router.post('/upload', upload.single('audio'), async (req, res) => {
   }
 });
 
-// GET /api/audio/search?surah=... - Search audio files by surah
+// Search audio by surah
 router.get('/search', async (req, res) => {
+  const { surah } = req.query;
+
+  if (!surah) {
+    return res.status(400).json({ error: 'Surah parameter is required' });
+  }
+
   try {
-    const { surah } = req.query;
-    if (!surah) {
-      return res.status(400).json({ error: 'Surah query parameter is required' });
-    }
-    const query = `
-      SELECT id, surah, description, filename, original_name, file_size, mime_type, created_at
-      FROM audio_files
-      WHERE LOWER(surah) LIKE LOWER($1)
-      ORDER BY created_at DESC
-    `;
-    const values = [`%${surah}%`];
-    const result = await pool.query(query, values);
+    const result = await pool.query(
+      'SELECT * FROM audio_files WHERE LOWER(surah) LIKE LOWER($1)',
+      [`%${surah}%`]
+    );
+
     res.json({ files: result.rows });
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({ error: 'Failed to search audio files' });
+  }
+});
+
+// Get all unique surah names for dropdown suggestions
+router.get('/surahs', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT DISTINCT surah FROM audio_files ORDER BY surah'
+    );
+
+    const surahs = result.rows.map(row => row.surah);
+    res.json({ surahs });
+  } catch (error) {
+    console.error('Failed to fetch surahs:', error);
+    res.status(500).json({ error: 'Failed to fetch surah names' });
   }
 });
 
@@ -111,7 +125,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const audioFile = result.rows[0];
-    
+
     // Set appropriate headers
     res.set({
       'Content-Type': audioFile.mime_type,
@@ -127,14 +141,35 @@ router.get('/:id', async (req, res) => {
     console.error('Retrieve error:', error);
     res.status(500).json({ error: 'Failed to retrieve audio file' });
   }
-  
+
+});
+
+// GET /api/audio - Get list of all audio files
+router.get('/', async (req, res) => {
+  try {
+    const query = `
+      SELECT id, surah, description, filename, original_name, file_size, mime_type, created_at 
+      FROM audio_files 
+      ORDER BY created_at DESC
+    `;
+
+    const result = await pool.query(query);
+
+    res.json({
+      files: result.rows
+    });
+
+  } catch (error) {
+    console.error('List error:', error);
+    res.status(500).json({ error: 'Failed to retrieve audio files list' });
+  }
 });
 
 // DELETE /api/audio/:id - Delete audio file
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const query = 'DELETE FROM audio_files WHERE id = $1 RETURNING id';
     const result = await pool.query(query, [id]);
 
@@ -150,4 +185,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;
