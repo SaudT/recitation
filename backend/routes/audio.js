@@ -130,27 +130,6 @@ router.get('/:id', async (req, res) => {
   
 });
 
-// GET /api/audio - Get list of all audio files
-router.get('/', async (req, res) => {
-  try {
-    const query = `
-      SELECT id, surah, description, filename, original_name, file_size, mime_type, created_at 
-      FROM audio_files 
-      ORDER BY created_at DESC
-    `;
-    
-    const result = await pool.query(query);
-    
-    res.json({
-      files: result.rows
-    });
-
-  } catch (error) {
-    console.error('List error:', error);
-    res.status(500).json({ error: 'Failed to retrieve audio files list' });
-  }
-});
-
 // DELETE /api/audio/:id - Delete audio file
 router.delete('/:id', async (req, res) => {
   try {
