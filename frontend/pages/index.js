@@ -134,10 +134,10 @@ function QuranAudioApp() {
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-8 max-w-6xl">
-        <div className="grid lg:grid-cols-2 gap-8 mb-12">
+      <div className="w-full px-6 py-8">
+        <div className="grid lg:grid-cols-1 gap-8 mb-12">
           {/* Upload Section */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          {/* <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
             <div className="flex items-center mb-6">
               <div className="bg-emerald-100 p-3 rounded-full mr-4">
                 <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,7 +208,7 @@ function QuranAudioApp() {
                 )}
               </button>
             </form>
-          </div>
+          </div> */}
 
           {/* Search Section */}
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
